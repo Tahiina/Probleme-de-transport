@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Transshipment problem</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="./static/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Your custom styles (optional) -->
+  <link href="./static/css/style.css" rel="stylesheet">
+
+
+
+
+</head>
+
+<body>
+  <div class="mx-auto" style="width: 90%; background-color: rgba(86,61,124,.15);">
+    <div class="card">
+      <h5 class="card-header text-center font-weight-bold text-uppercase py-4">Transshipment problem</h5>
+      <!-- </br> -->
+      <div class="card-body row">
+        <div id="table" class="table-responsive col-md-6">
+
+          <table name="initialTable"  id="initialTable" class="table table-bordered table-responsive-sm text-center">
+            <thead>
+              <tr style="background-color: aliceblue">
+                <th class="text-center" contenteditable="true"></th>
+                <th class="text-center" contenteditable="true">1<br></th>
+                <th class="text-center" contenteditable="true">2</th>
+                <th class="text-center" contenteditable="true">3</th>
+                <th class="text-center" contenteditable="true">4</th>
+                <th class="text-center" contenteditable="true">5</th>
+                <th class="text-center" contenteditable="true">6</th>
+                <th class="text-center" contenteditable="true"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th class="text-center" style="background-color: aliceblue">A</th>
+                <td class="pt-3-half" contenteditable="true">24</td>
+                <td class="pt-3-half" contenteditable="true">22</td>
+                <td class="pt-3-half" contenteditable="true">61</td>
+                <td class="pt-3-half" contenteditable="true">49</td>
+                <td class="pt-3-half" contenteditable="true">83</td>
+                <td class="pt-3-half" contenteditable="true">35</td>
+                <th class="pt-3-half a" contenteditable="true">18</th>
+              </tr>
+              <tr>
+                <th class="text-center" style="background-color: aliceblue">B</th>
+                <td class="pt-3-half" contenteditable="true">23</td>
+                <td class="pt-3-half" contenteditable="true">39</td>
+                <td class="pt-3-half" contenteditable="true">78</td>
+                <td class="pt-3-half" contenteditable="true">28</td>
+                <td class="pt-3-half" contenteditable="true">65</td>
+                <td class="pt-3-half" contenteditable="true">42</td>
+                <th class="pt-3-half a" contenteditable="true">32</th>
+              </tr>
+              <tr>
+                  <th class="text-center" style="background-color: aliceblue">C</th>
+                  <td class="pt-3-half" contenteditable="true">67</td>
+                  <td class="pt-3-half" contenteditable="true">56</td>
+                  <td class="pt-3-half" contenteditable="true">92</td>
+                  <td class="pt-3-half" contenteditable="true">24</td>
+                  <td class="pt-3-half" contenteditable="true">53</td>
+                  <td class="pt-3-half" contenteditable="true">54</td>
+                  <th class="pt-3-half a" contenteditable="true">14</th>
+                </tr>
+                <tr>
+                  <th class="text-center" style="background-color: aliceblue">D</th>
+                  <td class="pt-3-half" contenteditable="true">71</td>
+                  <td class="pt-3-half" contenteditable="true">43</td>
+                  <td class="pt-3-half" contenteditable="true">91</td>
+                  <td class="pt-3-half" contenteditable="true">67</td>
+                  <td class="pt-3-half" contenteditable="true">40</td>
+                  <td class="pt-3-half" contenteditable="true">49</td>
+                  <th class="pt-3-half a" contenteditable="true">9</th>
+                </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th class="text-center" style="background-color: aliceblue"></th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">9</th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">11</th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">28</th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">6</th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">14</th>
+                <th class="pt-3-half b" contenteditable="true" style="background-color: rgb(250, 252, 253)">5</th>
+                <th class="pt-3-half" style="background-color: rgb(250, 252, 253)"></th>
+              </tr>
+            </tfoot>
+          </table>
+          <!-- <p id="" class="text-right"><b>Z = 0</b></p> -->
+          
+        </div>
+
+        <div id="table" class="table-responsive col-md-6">
+          
+          <table name="tableBaseSolution"  id="tableBaseSolution" class="table table-bordered table-responsive-sm text-center">
+            <thead>
+                <tr style="background-color: aliceblue">
+                  <th class="text-center"></th>
+                  <th class="text-center">1<br></th>
+                  <th class="text-center">2</th>
+                  <th class="text-center">3</th>
+                  <th class="text-center">4</th>
+                  <th class="text-center">5</th>
+                  <th class="text-center">6</th>
+                  <!-- <th class="text-center"></th> -->
+                </tr>
+            </thead>
+            <tbody>
+              <tr id="name">
+                <th class="text-center" style="background-color: aliceblue">A</th>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <!-- <td class="pt-3-half"></td> -->
+              </tr>
+              <tr>
+                <th class="text-center" style="background-color: aliceblue">B</th>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <td class="pt-3-half"></td>
+                <!-- <td class="pt-3-half"></td> -->
+              </tr>
+              <tr>
+                  <th class="text-center" style="background-color: aliceblue">C</th>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <!-- <td class="pt-3-half"></td> -->
+                </tr>
+                <tr>
+                  <th class="text-center" style="background-color: aliceblue">D</th>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <td class="pt-3-half"></td>
+                  <!-- <td class="pt-3-half"></td> -->
+                </tr>
+            </tbody>
+            <!-- <tfoot>
+              <tr>
+                <th class="text-center" style="background-color: aliceblue"></th>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+                <td class="pt-3-half" style="background-color: rgb(250, 252, 253)"></td>
+              </tr>
+            </tfoot> -->
+          </table>
+          <h7 ></h7>
+          <p class="text-right">Z =<b id="total">0</b></p>
+          
+        </div>
+        
+      </div>
+
+      
+
+      <div id="divInsert" , name="divInsert">
+        <div class="px-md-3 text-center">
+          <button id="minitabBtn" name="minitabBtn" class="btn btn-primary">MINITAB</button>
+          <button id="findOptimalBtn" name="findOptimalBtn" class="btn btn-danger">STEPPING STONE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Editable table -->
+
+
+  <!-- /Start your project here-->
+
+  <!-- SCRIPTS -->
+  <!-- JQuery -->
+  <script type="text/javascript" src="./static/js/jquery-3.3.1.min.js"></script>
+  <!-- Bootstrap tooltips -->
+  <script type="text/javascript" src="./static/js/popper.min.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script type="text/javascript" src="./static/js/bootstrap.min.js"></script>
+
+  <script type="text/javascript" src="./index.js"></script>
