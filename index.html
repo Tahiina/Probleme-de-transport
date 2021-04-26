@@ -6,16 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <title>Transshipment problem</title>
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
   <!-- Bootstrap core CSS -->
   <link href="./static/css/bootstrap.min.css" rel="stylesheet">
   <!-- Your custom styles (optional) -->
   <link href="./static/css/style.css" rel="stylesheet">
-
-
-
-
 </head>
 
 <body>
@@ -24,24 +18,25 @@
       <h5 class="card-header text-center font-weight-bold text-uppercase py-4">Transshipment problem</h5>
       <!-- </br> -->
       <div class="card-body row">
-        <div id="table" class="table-responsive col-md-6">
+
+        <div id="table" class="table-responsive col-md-4">
 
           <table name="initialTable"  id="initialTable" class="table table-bordered table-responsive-sm text-center">
             <thead>
               <tr style="background-color: aliceblue">
                 <th class="text-center" contenteditable="true"></th>
-                <th class="text-center" contenteditable="true">1<br></th>
-                <th class="text-center" contenteditable="true">2</th>
-                <th class="text-center" contenteditable="true">3</th>
-                <th class="text-center" contenteditable="true">4</th>
-                <th class="text-center" contenteditable="true">5</th>
-                <th class="text-center" contenteditable="true">6</th>
+                <th class="text-center labelle" contenteditable="true">1</th>
+                <th class="text-center labelle" contenteditable="true">2</th>
+                <th class="text-center labelle" contenteditable="true">3</th>
+                <th class="text-center labelle" contenteditable="true">4</th>
+                <th class="text-center labelle" contenteditable="true">5</th>
+                <th class="text-center labelle" contenteditable="true">6</th>
                 <th class="text-center" contenteditable="true"></th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th class="text-center" style="background-color: aliceblue">A</th>
+                <th class="text-center labelle" style="background-color: aliceblue">A</th>
                 <td class="pt-3-half" contenteditable="true">24</td>
                 <td class="pt-3-half" contenteditable="true">22</td>
                 <td class="pt-3-half" contenteditable="true">61</td>
@@ -51,7 +46,7 @@
                 <th class="pt-3-half a" contenteditable="true">18</th>
               </tr>
               <tr>
-                <th class="text-center" style="background-color: aliceblue">B</th>
+                <th class="text-center labelle" style="background-color: aliceblue">B</th>
                 <td class="pt-3-half" contenteditable="true">23</td>
                 <td class="pt-3-half" contenteditable="true">39</td>
                 <td class="pt-3-half" contenteditable="true">78</td>
@@ -61,7 +56,7 @@
                 <th class="pt-3-half a" contenteditable="true">32</th>
               </tr>
               <tr>
-                  <th class="text-center" style="background-color: aliceblue">C</th>
+                  <th class="text-center labelle" style="background-color: aliceblue">C</th>
                   <td class="pt-3-half" contenteditable="true">67</td>
                   <td class="pt-3-half" contenteditable="true">56</td>
                   <td class="pt-3-half" contenteditable="true">92</td>
@@ -71,7 +66,7 @@
                   <th class="pt-3-half a" contenteditable="true">14</th>
                 </tr>
                 <tr>
-                  <th class="text-center" style="background-color: aliceblue">D</th>
+                  <th class="text-center labelle" style="background-color: aliceblue">D</th>
                   <td class="pt-3-half" contenteditable="true">71</td>
                   <td class="pt-3-half" contenteditable="true">43</td>
                   <td class="pt-3-half" contenteditable="true">91</td>
@@ -98,7 +93,7 @@
           
         </div>
 
-        <div id="table" class="table-responsive col-md-6">
+        <div id="baseSolution" class="table-responsive col-md-4">
           
           <table name="tableBaseSolution"  id="tableBaseSolution" class="table table-bordered table-responsive-sm text-center">
             <thead>
@@ -114,7 +109,7 @@
                 </tr>
             </thead>
             <tbody>
-              <tr id="name">
+              <tr>
                 <th class="text-center" style="background-color: aliceblue">A</th>
                 <td class="pt-3-half"></td>
                 <td class="pt-3-half"></td>
@@ -169,26 +164,25 @@
             </tfoot> -->
           </table>
           <h7 ></h7>
-          <p class="text-right">Z =<b id="total">0</b></p>
+          <p class="text-right">Z = <b id="total">0</b></p>
           
         </div>
-        
+       
+        <div id="myGraph" class="col-md-4" style="border: solid 1px blue; width:100%; height:400px">
+
+        </div>
+
       </div>
-
-      
-
-      <div id="divInsert" , name="divInsert">
+      <div id="divInsert" class="card-footer" name="divInsert">
         <div class="px-md-3 text-center">
           <button id="minitabBtn" name="minitabBtn" class="btn btn-primary">MINITAB</button>
           <button id="findOptimalBtn" name="findOptimalBtn" class="btn btn-danger">STEPPING STONE</button>
         </div>
       </div>
+
+
     </div>
   </div>
-  <!-- Editable table -->
-
-
-  <!-- /Start your project here-->
 
   <!-- SCRIPTS -->
   <!-- JQuery -->
@@ -198,4 +192,7 @@
   <!-- Bootstrap core JavaScript -->
   <script type="text/javascript" src="./static/js/bootstrap.min.js"></script>
 
+  <script src="./static/js/go-debug.js"></script>
+
   <script type="text/javascript" src="./index.js"></script>
+
