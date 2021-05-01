@@ -13,13 +13,13 @@
 </head>
 
 <body>
-  <div class="mx-auto" style="width: 90%; background-color: rgba(86,61,124,.15);">
+  <div class="mx-auto" style="width: 98%; background-color: rgba(86,61,124,.15);">
     <div class="card">
       <h5 class="card-header text-center font-weight-bold text-uppercase py-4">Transshipment problem</h5>
       <!-- </br> -->
       <div class="card-body row">
 
-        <div id="table" class="table-responsive col-md-4">
+        <div id="table" class="table-responsive col-lg-3">
 
           <table name="initialTable"  id="initialTable" class="table table-bordered table-responsive-sm text-center">
             <thead>
@@ -93,7 +93,7 @@
           
         </div>
 
-        <div id="baseSolution" class="table-responsive col-md-4">
+        <div id="baseSolution" class="table-responsive col-lg-3">
           
           <table name="tableBaseSolution"  id="tableBaseSolution" class="table table-bordered table-responsive-sm text-center">
             <thead>
@@ -168,15 +168,21 @@
           
         </div>
        
-        <div id="myGraph" class="col-md-4" style="border: solid 1px blue; width:100%; height:400px">
+        <div id="myGraph" class="col-lg-3" style="border: solid 1px blue; width:100%; height:500px">
+        </div>
 
+        <div id="gain" class="col-lg-3" style="border: solid 1px blue; width:100%; height:500px">
+          <h4> CALCUL DES GAINS</h4>
+          <ul class="list-group" id="listeGains">
+          </ul>
         </div>
 
       </div>
       <div id="divInsert" class="card-footer" name="divInsert">
         <div class="px-md-3 text-center">
           <button id="minitabBtn" name="minitabBtn" class="btn btn-primary">MINITAB</button>
-          <button id="findOptimalBtn" name="findOptimalBtn" class="btn btn-danger">STEPPING STONE</button>
+          <button id="getGraphBtn" name="getGraphBtn" class="btn btn-primary">ETABLIR LE GRAPH</button>
+          <button id="calculGainBtn" name="calculGainBtn" class="btn btn-primary">CALCULER GAINS</button>
         </div>
       </div>
 

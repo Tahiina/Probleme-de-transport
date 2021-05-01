@@ -1,11 +1,39 @@
 $(function () {
-    
-    var baseSolutionTable = [];
-    var originalTable = [];
+    var noeuds = [];                        // copie de la variables nodeDataArray
+    // var liens = [];     
+    var baseSolutionTable = [];             // copie de la solution de base
+    var originalTable = [];                 // copie de la table original
+    var nombreSource;                       // nombre des colonnes sources
     var $$ = go.GraphObject.make;
+
+    /****************** CALCULER LES GAINS ********************/
+
+    $("#calculGainBtn").click(function() {
+        for(var i=0; i < baseSolutionTable.length; i++) {
+            for(var j=0; j < baseSolutionTable[i].length; j++) {
+                if(baseSolutionTable[i][j] == 0) {
+                    if(parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value) >= 0) {
+                        $("ul#listeGains").append('<li class="ml-3"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
+                            noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
+                            ' = P </li>')
+                    }
+                    else {
+                        $("ul#listeGains").append('<li class="ml-3 text-danger"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
+                            noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
+                            ' = '+ parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value)
+                        +'</li>')
+                    }
+                }
+            }
+        }
+    });
+
+    /************************************************* ///////////// \\\\\\\\\\\\\\ *********************************************/
+
+
     /****************** CODE POUR LE GRAPH EXECUTANT LE STEPPING STONE ********************/
 
-    $("#findOptimalBtn").click(function() {
+    $("#getGraphBtn").click(function() {
         var array1 = [], array2 = [];   // pour stocker la valeur des entetes du tableau différement
         var nodeDataArray = [], linkDataArray = []; // ce sont les tableaux utilisés par gojs pour rendre la vue
         
@@ -15,9 +43,16 @@ $(function () {
         $$(go.Node, "Auto",
             { locationSpot: go.Spot.Center },
             new go.Binding("location", "loc", go.Point.parse),
-            $$(go.Shape, "RoundedRectangle", { fill: "lightgray" }),
+            $$(go.Panel,
+                $$(go.Shape, "RoundedRectangle", { fill: "lightgray", width: 60, height: 30 }), 
+                $$(go.TextBlock,
+                    { margin: 2, width: 15 },
+                    new go.Binding("text", "value").makeTwoWay(),
+                    { background: "yellow", alignment: go.Spot.TopLeft }
+                )  
+            ),  
             $$(go.TextBlock, { margin: 5 },
-                new go.Binding("text", "key"))
+                new go.Binding("text", "key")),
         );
 
         diagram.linkTemplate =
@@ -27,10 +62,10 @@ $(function () {
                 $$(go.Shape, { toArrow: "OpenTriangle" }),
                 $$(go.TextBlock,                        // this is a Link label
                     new go.Binding("text", "text"),
-                    { segmentIndex : Math.random() },
-                    {segmentFraction : Math.random() }
+                    { segmentOffset: new go.Point(0, -10) }
                 )
             );
+
         getTabTitleValue(array1, array2);
         nodeDataArray = array1.concat(array2);
         
@@ -47,7 +82,48 @@ $(function () {
                 }
             }
         }
+
+        // Calculer la valeur de chaque noeud à partir des valeurs des liens
+        while(!checkEmptyTitleNodeArrayValue(nodeDataArray)) {
+            let index = getIndexOfMaximumValue(linkDataArray);
+            var origin = linkDataArray[index].from;
+            // Initialisation
+            for(var i=0; i < nodeDataArray.length; i++) {
+                if(nodeDataArray[i].key == origin)
+                    nodeDataArray[i].value = 0;
+            }
+            // Remplir la destination à l'aide des noeuds sources non null
+            for(var j=0; j < nodeDataArray.length; j++) {
+                if(nodeDataArray[j].type == "source" && nodeDataArray[j].value != null) {
+                    for(var k=0; k < linkDataArray.length; k++) {
+                        if(linkDataArray[k].from == nodeDataArray[j].key) {
+                            var val = nodeDataArray[j].value;
+                            for(var i=0; i < nodeDataArray.length; i++) {
+                                if(nodeDataArray[i].key == linkDataArray[k].to && nodeDataArray[i].type == "destination" && nodeDataArray[i].value == null) { 
+                                    nodeDataArray[i].value = val + linkDataArray[k].text;
+                                }
+                            }
+                        }
+                    }
+                }
+                // Remplir les noeuds sources à l'aide des noeuds de destinations non null
+                if(nodeDataArray[j].type == "destination" && nodeDataArray[j].value != null) {
+                    for(var k=0; k < linkDataArray.length; k++) {
+                        if(nodeDataArray[j].key == linkDataArray[k].to && nodeDataArray[j].value != null) {
+                            var val = nodeDataArray[j].value;
+                            for(var l=0; l < nodeDataArray.length; l++) {
+                                if(nodeDataArray[l].key == linkDataArray[k].from && nodeDataArray[l].value == null) {
+                                    nodeDataArray[l].value = val - linkDataArray[k].text;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         diagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
+        noeuds = [...nodeDataArray];
+        // liens = [...linkDataArray];
     });
 
     // Receuille la liste des noeuds dans deux tableaux différents
@@ -55,21 +131,41 @@ $(function () {
         var rang1=1, rang2=1;
         // recevoir la première liste des noeuds 
         $("#initialTable tbody tr th.labelle").each(function() {
-            var data = { key: "", loc: ""};
+            var data = { key: "", loc: "", value: null, type: "source"};
             data.key = $(this).text();
-            data.loc = "50 "+rang1*80;
+            data.loc = "50 "+rang1*100;
             x.push(data);
             rang1++;
         });
-
+        nombreSource = rang1-1;
         // recevoir la deuxième liste des noeuds 
         $("#initialTable thead tr th.labelle").each(function() {
-            var data = { key: "", loc: ""};
+            var data = { key: "", loc: "", value: null, type: "destination"};
             data.key = $(this).text();
-            data.loc = "250 "+rang2*60;
+            data.loc = "270 "+rang2*70;
             y.push(data);
             rang2++;
         })
+    }
+
+    function checkEmptyTitleNodeArrayValue(tableau) {
+        for(var i=0; i < tableau.length; i++) {
+            if(tableau[i].value == null) return false;
+        }
+        return true;
+    }
+
+    // Obtenir l'index de la valeur maximum dans le tableau linkDataArray
+    function getIndexOfMaximumValue(tableau) {
+        var max = tableau[0].text;
+        var index = 0;
+        for(var i=1; i < tableau.length; i++) {
+            if( max < tableau[i].text) { 
+                max = tableau[i].text;
+                index = i; 
+            }
+        } 
+        return index;
     }
 
     /************************************************* ///////////// \\\\\\\\\\\\\\ *********************************************/
