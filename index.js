@@ -1,6 +1,6 @@
 $(function () {
     var noeuds = [];                        // copie de la variables nodeDataArray
-    // var liens = [];     
+    var gainMaximum = {};     
     var baseSolutionTable = [];             // copie de la solution de base
     var originalTable = [];                 // copie de la table original
     var nombreSource;                       // nombre des colonnes sources
@@ -8,25 +8,140 @@ $(function () {
 
     /****************** CALCULER LES GAINS ********************/
 
+    $("#appliquerGain").click(function() {
+        const gain = gainMaximum.coefficient;
+        for(var i=0; i < gainMaximum.chemin.length; i++) {
+            var ligne = gainMaximum.chemin[i].ligne;
+            var colonne = gainMaximum.chemin[i].colonne;
+            if(gainMaximum.chemin[i].marque == '+') 
+                baseSolutionTable[ligne][colonne] += gain;
+            else
+                baseSolutionTable[ligne][colonne] -= gain;
+        }
+        // Appliquer la modification dans le tableau
+        solutionDeBase(baseSolutionTable, originalTable);
+    });
+
     $("#calculGainBtn").click(function() {
+        var listChemin = [];
+        var indexOfMaximumGain;
         for(var i=0; i < baseSolutionTable.length; i++) {
             for(var j=0; j < baseSolutionTable[i].length; j++) {
                 if(baseSolutionTable[i][j] == 0) {
-                    if(parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value) >= 0) {
+                    var resultat = parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value);
+                    if(resultat >= 0) {
                         $("ul#listeGains").append('<li class="ml-3"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
                             noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
                             ' = P </li>')
                     }
+                    // Si il y a des valeurs négatives, nous allons calculer les gains
                     else {
+                        var copieTableBaseSolution = baseSolutionTable.map(function(arr) {
+                            return arr.slice();
+                        });
+                        var chemin = marquage(copieTableBaseSolution, i, j);
+                        // console.log(gain);
+                        var coefficient = findTheMinimumValueOfChemin(chemin);
+                        listChemin.push({ coefficient: coefficient, gain: parseInt(resultat*coefficient), chemin: chemin});
+
                         $("ul#listeGains").append('<li class="ml-3 text-danger"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
                             noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
-                            ' = '+ parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value)
+                            ' = '+ resultat + '<br>  => Gain = ' + resultat + 'x' + coefficient + ' = ' + parseInt(resultat*coefficient)
                         +'</li>')
                     }
                 }
             }
         }
+        indexOfMaximumGain = findIndexOfMaximumOfGain(listChemin);
+        gainMaximum = listChemin[indexOfMaximumGain];   // On initialise la variable global gainMaximum
+
     });
+
+    function marquage(tableau, row, col) {
+        var chemin = [];
+        var stop = false;
+        var target = 'ligne';
+        var data = {ligne: row, colonne: col, value: tableau[row][col], marque: '+'}; // premier chemin
+        var ligneActuel = row;
+        var colonneActuel = col;
+        chemin.push(data);
+
+        while(!stop) {
+            if(target == 'ligne') {
+                for(var i=0; i < tableau.length; i++) {
+                    if(tableau[i][colonneActuel] != 0 && i != ligneActuel ) {
+                        if(i == row && colonneActuel != col) {
+                            chemin.push({ligne: i, colonne: colonneActuel, value: tableau[i][colonneActuel], marque: '-'});
+                            stop = true; // on sort de la boucle
+                            break;
+                        }
+                        if(isTheCorrectWayForLine(tableau, i, colonneActuel)) {
+                            chemin.push({ligne: i, colonne: colonneActuel, value: tableau[i][colonneActuel], marque: '-'});
+                            ligneActuel = i;
+                            target = 'colonne';
+                        }
+                    }
+                }
+            }
+            else {
+                for(var j=0; j < tableau[ligneActuel].length; j++) {
+                    if(j != colonneActuel && tableau[ligneActuel][j] != 0 && isTheCorrectwayForColumn(tableau, ligneActuel, j, row)) {
+                        chemin.push({ligne: ligneActuel, colonne: j, value: tableau[ligneActuel][j], marque: '+'});
+                        colonneActuel = j;
+                        target = 'ligne';
+                    }
+                }
+            }
+        }
+        return chemin;
+    }
+
+    // Recherche du minimum dans le marquage -
+    function findTheMinimumValueOfChemin(chemin) {
+        var minimum = chemin[1].value;
+        for(var i=3; i < chemin.length; i+=2) {
+            if(chemin[i].value < minimum && chemin[i].marque == '-') minimum = chemin[i].value;
+        }
+        return minimum;
+    }
+
+    //Recherche du gain maximal avant de l'appliquer 
+    function findIndexOfMaximumOfGain(liste) {
+        var max = liste[0].gain;
+        var index = 0;
+        for(var i=1; i < liste.length; i++) {
+            if(max > liste[i].gain) {   // on utilise l'operateur > car c'est un nombre negative, alors le maximum de gain sera le plus petit
+                max = liste[i].gain;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la colonne
+    function isTheCorrectwayForColumn(table, ligne, colonne, finalRow) {
+        for(var i=0; i < table.length; i++) {
+            // On vérifie si on est déjà de retour à la case depart (on a terminé) ===>>> on verifie si la ligne correspond à la ligne de depart
+            if(i == finalRow && table[i][colonne] != 0) return true;
+            if(i != ligne && table[i][colonne] != 0) {
+                for(var j=0; j < table[i].length; j++) {
+                    if(j != colonne && table[i][j] != 0) return true;
+                }
+            }
+        }
+        return false;
+    }
+    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la ligne 
+    function isTheCorrectWayForLine(table, ligne,colonne) {
+        for(var i=0; i < table[ligne].length; i++) {
+            if(i != colonne && table[ligne][i] != 0) {
+                for(var j=0; j < table.length; j++) {
+                    if(j != ligne && table[j][i] != 0) return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /************************************************* ///////////// \\\\\\\\\\\\\\ *********************************************/
 
@@ -182,7 +297,6 @@ $(function () {
         });
         var copieA = [...a];
         var copieB = [...b];
-        
 
         x = minitab(copieA, copieB, copieC);
 
@@ -273,7 +387,7 @@ $(function () {
             });
             i++;
             j=0;
-        })
+        });
         $("#total").html(calculerZ(c, x));
     }
 
@@ -306,4 +420,5 @@ $(function () {
         }
         return index;
     }
+
 });
