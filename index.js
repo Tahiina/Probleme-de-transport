@@ -20,15 +20,23 @@ $(function () {
         }
         // Appliquer la modification dans le tableau
         solutionDeBase(baseSolutionTable, originalTable);
+        $("#graph-container").html("");
+        $("#listeGains").html("");
+        $("#appliquerGain").hide();
+        $("#getGraphBtn").show();
     });
 
     $("#calculGainBtn").click(function() {
         var listChemin = [];
         var indexOfMaximumGain;
+        var copieTableBaseSolution = baseSolutionTable.map(function(arr) {
+            return arr.slice();
+        });
+        $("ul#listeGains").html("");
         for(var i=0; i < baseSolutionTable.length; i++) {
             for(var j=0; j < baseSolutionTable[i].length; j++) {
                 if(baseSolutionTable[i][j] == 0) {
-                    var resultat = parseInt(noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value);
+                    var resultat = noeuds[i].value+originalTable[i][j]-noeuds[j+nombreSource].value;
                     if(resultat >= 0) {
                         $("ul#listeGains").append('<li class="ml-3"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
                             noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
@@ -36,11 +44,7 @@ $(function () {
                     }
                     // Si il y a des valeurs négatives, nous allons calculer les gains
                     else {
-                        var copieTableBaseSolution = baseSolutionTable.map(function(arr) {
-                            return arr.slice();
-                        });
                         var chemin = marquage(copieTableBaseSolution, i, j);
-                        // console.log(gain);
                         var coefficient = findTheMinimumValueOfChemin(chemin);
                         listChemin.push({ coefficient: coefficient, gain: parseInt(resultat*coefficient), chemin: chemin});
 
@@ -52,8 +56,15 @@ $(function () {
                 }
             }
         }
-        indexOfMaximumGain = findIndexOfMaximumOfGain(listChemin);
-        gainMaximum = listChemin[indexOfMaximumGain];   // On initialise la variable global gainMaximum
+        if(listChemin.length > 0) {
+            indexOfMaximumGain = findIndexOfMaximumOfGain(listChemin);
+            gainMaximum = listChemin[indexOfMaximumGain];   // On initialise la variable global gainMaximum
+            $("#calculGainBtn").hide();
+            $("#appliquerGain").show();
+        }
+        else {
+            $("#divInsert").html('<h5 class="text-center font-weight-bold text-uppercase py-2">Félicitation, le transport est optimal</h5>');
+        }
 
     });
 
@@ -99,7 +110,7 @@ $(function () {
     // Recherche du minimum dans le marquage -
     function findTheMinimumValueOfChemin(chemin) {
         var minimum = chemin[1].value;
-        for(var i=3; i < chemin.length; i+=2) {
+        for(var i=1; i < chemin.length; i++) {
             if(chemin[i].value < minimum && chemin[i].marque == '-') minimum = chemin[i].value;
         }
         return minimum;
@@ -126,6 +137,7 @@ $(function () {
             if(i != ligne && table[i][colonne] != 0) {
                 for(var j=0; j < table[i].length; j++) {
                     if(j != colonne && table[i][j] != 0) return true;
+
                 }
             }
         }
@@ -151,64 +163,73 @@ $(function () {
     $("#getGraphBtn").click(function() {
         var array1 = [], array2 = [];   // pour stocker la valeur des entetes du tableau différement
         var nodeDataArray = [], linkDataArray = []; // ce sont les tableaux utilisés par gojs pour rendre la vue
+        // On supprime d'abord son contenu puis on le reajoute pour eviter l'erreur durant la creation du diagram
+        $("#graph-container").html("");
+        $("#graph-container").append('<div id="myGraph" style="width:100%; height:500px"> \
+        </div>');
         
-        var diagram = new go.Diagram("myGraph");
-        diagram.nodeTemplate =
+        var diagram = $$(go.Diagram, "myGraph");
+        diagram.nodeTemplate = $$(go.Node, "Auto",
+                                    { locationSpot: go.Spot.Center },
+                                    new go.Binding("location", "loc", go.Point.parse),
+                                    $$(go.Panel,
+                                        $$(go.Shape, "RoundedRectangle", { fill: "lightgray", width: 80, height: 30 }), 
+                                        $$(go.TextBlock,
+                                            { margin: 2, width: 25 },
+                                            new go.Binding("text", "value"),
+                                            { background: "yellow", alignment: go.Spot.TopLeft }
+                                        )  
+                                    ),
+                                    $$(go.TextBlock, { margin: 5 },
+                                        new go.Binding("text", "key")),
+                                );
+        diagram.linkTemplate = $$(go.Link,
+                                    { curve: go.Link.Bezier },
+                                    $$(go.Shape),
+                                    $$(go.TextBlock,                        // this is a Link label
+                                        new go.Binding("text", "text"),
+                                        { segmentOffset: new go.Point(0, -10) }
+                                    )
+                                );
 
-        $$(go.Node, "Auto",
-            { locationSpot: go.Spot.Center },
-            new go.Binding("location", "loc", go.Point.parse),
-            $$(go.Panel,
-                $$(go.Shape, "RoundedRectangle", { fill: "lightgray", width: 60, height: 30 }), 
-                $$(go.TextBlock,
-                    { margin: 2, width: 15 },
-                    new go.Binding("text", "value").makeTwoWay(),
-                    { background: "yellow", alignment: go.Spot.TopLeft }
-                )  
-            ),  
-            $$(go.TextBlock, { margin: 5 },
-                new go.Binding("text", "key")),
-        );
+        nodeDataArray = ObtenirLesTitresDuTableau(array1, array2);
+        
+        creerLesLiensEtMettreAJourLesValeursDesNoeuds(baseSolutionTable, nodeDataArray, linkDataArray, array1, array2);
 
-        diagram.linkTemplate =
-            $$(go.Link,
-                { curve: go.Link.Bezier },
-                $$(go.Shape),
-                $$(go.Shape, { toArrow: "OpenTriangle" }),
-                $$(go.TextBlock,                        // this is a Link label
-                    new go.Binding("text", "text"),
-                    { segmentOffset: new go.Point(0, -10) }
-                )
-            );
+        diagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
+        noeuds = [...nodeDataArray];    // On copie la valeur de nodeDataArray dans la variable principale noeud 
 
-        getTabTitleValue(array1, array2);
-        nodeDataArray = array1.concat(array2);
+        $("#getGraphBtn").hide();
+        $("#calculGainBtn").show();
+    });
+
+    function creerLesLiensEtMettreAJourLesValeursDesNoeuds (baseSolutionTable, nodeDataArray, linkDataArray, enteteHorizontale, enteteVerticale) {
         
         // Remplir le tableau linkDataArray pour lier les noeuds
         for(var i=0; i < baseSolutionTable.length; i++) {
             for(var j=0; j < baseSolutionTable[i].length; j++) {
                 if(baseSolutionTable[i][j] != 0) {
-                    // console.log("original value : "+originalTable[i][j]+'\n')
                     var data = { from: "", to: "", text: "" };
-                    data.from = array1[i].key;
-                    data.to = array2[j].key;
+                    data.from = enteteHorizontale[i].key;
+                    data.to = enteteVerticale[j].key;
                     data.text = originalTable[i][j];
                     linkDataArray.push(data);
                 }
             }
         }
 
+        let index = getIndexOfMaximumValue(linkDataArray);      // On recherche le lien possédant la valeur maximale
+        var origin = linkDataArray[index].from;
+        // Initialisation du point de départ
+        for(var i=0; i < nodeDataArray.length; i++) {
+            if(nodeDataArray[i].key == origin)
+                nodeDataArray[i].value = 0;
+        }
         // Calculer la valeur de chaque noeud à partir des valeurs des liens
-        while(!checkEmptyTitleNodeArrayValue(nodeDataArray)) {
-            let index = getIndexOfMaximumValue(linkDataArray);
-            var origin = linkDataArray[index].from;
-            // Initialisation
-            for(var i=0; i < nodeDataArray.length; i++) {
-                if(nodeDataArray[i].key == origin)
-                    nodeDataArray[i].value = 0;
-            }
-            // Remplir la destination à l'aide des noeuds sources non null
+        while(!checkEmptyTitleNodeArrayValue(nodeDataArray)) {  // on execute l'algo tant qu'il y a encore des noeuds qui ne possède aucune valeur
+            
             for(var j=0; j < nodeDataArray.length; j++) {
+                // Remplir la destination à l'aide des noeuds sources non null
                 if(nodeDataArray[j].type == "source" && nodeDataArray[j].value != null) {
                     for(var k=0; k < linkDataArray.length; k++) {
                         if(linkDataArray[k].from == nodeDataArray[j].key) {
@@ -236,13 +257,12 @@ $(function () {
                 }
             }
         }
-        diagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
-        noeuds = [...nodeDataArray];
-        // liens = [...linkDataArray];
-    });
+        // console.log(nodeDataArray);
+        // console.log(linkDataArray);
+    }
 
     // Receuille la liste des noeuds dans deux tableaux différents
-    function getTabTitleValue(x, y) {
+    function ObtenirLesTitresDuTableau(x, y) {
         var rang1=1, rang2=1;
         // recevoir la première liste des noeuds 
         $("#initialTable tbody tr th.labelle").each(function() {
@@ -261,8 +281,10 @@ $(function () {
             y.push(data);
             rang2++;
         })
+        return x.concat(y);
     }
 
+    // Verifier si le noeud possède deja une valeur différent de null
     function checkEmptyTitleNodeArrayValue(tableau) {
         for(var i=0; i < tableau.length; i++) {
             if(tableau[i].value == null) return false;
@@ -308,7 +330,9 @@ $(function () {
         });
                 // console.log("originaltable : "+originalTable);
         solutionDeBase(x, c);
-        
+
+        $("#minitabBtn").hide();
+        $("#getGraphBtn").show();
     });
 
     function getTablesValues(a, b, c) {
