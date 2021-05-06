@@ -13,11 +13,18 @@ $(function () {
         for(var i=0; i < gainMaximum.chemin.length; i++) {
             var ligne = gainMaximum.chemin[i].ligne;
             var colonne = gainMaximum.chemin[i].colonne;
-            if(gainMaximum.chemin[i].marque == '+') 
-                baseSolutionTable[ligne][colonne] += gain;
+            if(gainMaximum.chemin[i].marque == '+') {
+                if(baseSolutionTable[ligne][colonne] == "E")
+                    baseSolutionTable[ligne][colonne] = gain; 
+                else
+                    baseSolutionTable[ligne][colonne] += gain;
+            }
             else
                 baseSolutionTable[ligne][colonne] -= gain;
         }
+        if(estUnCasDegenere(noeuds, baseSolutionTable))
+            addALink(baseSolutionTable, noeuds);
+            
         // Appliquer la modification dans le tableau
         solutionDeBase(baseSolutionTable, originalTable);
         $("#graph-container").html("");
@@ -46,12 +53,21 @@ $(function () {
                     else {
                         var chemin = marquage(copieTableBaseSolution, i, j);
                         var coefficient = findTheMinimumValueOfChemin(chemin);
-                        listChemin.push({ coefficient: coefficient, gain: parseInt(resultat*coefficient), chemin: chemin});
-
-                        $("ul#listeGains").append('<li class="ml-3 text-danger"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
-                            noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
-                            ' = '+ resultat + '<br>  => Gain = ' + resultat + 'x' + coefficient + ' = ' + parseInt(resultat*coefficient)
-                        +'</li>')
+                        // Si c'est égale à Eupsilone
+                        if(coefficient == "E"){
+                            listChemin.push({ coefficient: coefficient, gain: "-E", chemin: chemin});
+                            $("ul#listeGains").append('<li class="ml-3 text-danger"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
+                                noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
+                                ' = '+ resultat + '<br>  => Gain = ' + resultat + 'x' + coefficient + ' = ' + "-E"
+                            +'</li>')
+                        }
+                        else {
+                            listChemin.push({ coefficient: coefficient, gain: parseInt(resultat*coefficient), chemin: chemin});
+                            $("ul#listeGains").append('<li class="ml-3 text-danger"> £('+ noeuds[i].key +', '+ noeuds[j+nombreSource].key +') = '+
+                                noeuds[i].value + '+' + originalTable[i][j] + '-' + noeuds[j+nombreSource].value + 
+                                ' = '+ resultat + '<br>  => Gain = ' + resultat + 'x' + coefficient + ' = ' + parseInt(resultat*coefficient)
+                            +'</li>')
+                        }
                     }
                 }
             }
@@ -86,7 +102,7 @@ $(function () {
                             stop = true; // on sort de la boucle
                             break;
                         }
-                        if(isTheCorrectWayForLine(tableau, i, colonneActuel)) {
+                        if(isTheCorrectWayForLine(tableau, i, colonneActuel, row)) {
                             chemin.push({ligne: i, colonne: colonneActuel, value: tableau[i][colonneActuel], marque: '-'});
                             ligneActuel = i;
                             target = 'colonne';
@@ -107,11 +123,35 @@ $(function () {
         return chemin;
     }
 
+    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la colonne
+    function isTheCorrectwayForColumn(table, ligne, colonne, finalRow) {
+        for(var i=0; i < table.length; i++) {
+            // On vérifie si on est déjà de retour à la case depart (on a terminé) ===>>> on verifie si la ligne correspond à la ligne de depart
+            if(i == finalRow && table[i][colonne] != 0) return true;
+            if(i != ligne && table[i][colonne] != 0)
+                if(isTheCorrectWayForLine(table, i, colonne, finalRow)) 
+                    return true;
+        }
+        return false;
+    }
+    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la ligne 
+    function isTheCorrectWayForLine(table, ligne,colonne, finalRow) {
+        for(var i=0; i < table[ligne].length; i++) {
+            if(i != colonne && table[ligne][i] != 0)
+                if(isTheCorrectwayForColumn(table, ligne, i, finalRow)) 
+                    return true;
+        }
+        return false;
+    }
+
     // Recherche du minimum dans le marquage -
     function findTheMinimumValueOfChemin(chemin) {
         var minimum = chemin[1].value;
         for(var i=1; i < chemin.length; i++) {
-            if(chemin[i].value < minimum && chemin[i].marque == '-') minimum = chemin[i].value;
+            if(chemin[i].value == "E" && chemin[i].marque == '-') {
+                minimum = chemin[i].value;
+            }
+            if(chemin[i].value != "E" && chemin[i].value < minimum && chemin[i].marque == '-') minimum = chemin[i].value;
         }
         return minimum;
     }
@@ -121,7 +161,7 @@ $(function () {
         var max = liste[0].gain;
         var index = 0;
         for(var i=1; i < liste.length; i++) {
-            if(max > liste[i].gain) {   // on utilise l'operateur > car c'est un nombre negative, alors le maximum de gain sera le plus petit
+            if(max > liste[i].gain && liste[i].gain != "-E") {   // on utilise l'operateur > car c'est un nombre negative, alors le maximum de gain sera le plus petit
                 max = liste[i].gain;
                 index = i;
             }
@@ -129,34 +169,57 @@ $(function () {
         return index;
     }
 
-    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la colonne
-    function isTheCorrectwayForColumn(table, ligne, colonne, finalRow) {
-        for(var i=0; i < table.length; i++) {
-            // On vérifie si on est déjà de retour à la case depart (on a terminé) ===>>> on verifie si la ligne correspond à la ligne de depart
-            if(i == finalRow && table[i][colonne] != 0) return true;
-            if(i != ligne && table[i][colonne] != 0) {
-                for(var j=0; j < table[i].length; j++) {
-                    if(j != colonne && table[i][j] != 0) return true;
-
-                }
-            }
-        }
-        return false;
-    }
-    // Au cas où on doit, choisir entre différents chemin, cette fonction va nous permettre de trouver le bon pour la ligne 
-    function isTheCorrectWayForLine(table, ligne,colonne) {
-        for(var i=0; i < table[ligne].length; i++) {
-            if(i != colonne && table[ligne][i] != 0) {
-                for(var j=0; j < table.length; j++) {
-                    if(j != ligne && table[j][i] != 0) return true;
-                }
-            }
-        }
-        return false;
-    }
-
     /************************************************* ///////////// \\\\\\\\\\\\\\ *********************************************/
+    // CAS DEGENERES
 
+    function estUnCasDegenere(noeuds, table) {
+        var nombreLiens = 0;
+        for(var i=0; i < table.length; i++) {
+            for(var j=0; j < table[i].length; j++) {
+                if(table[i][j] != 0) nombreLiens++;
+            }
+        }
+        return (nombreLiens != noeuds.length-1);
+    }
+
+    function addALink(table) {
+        for(var k=0; k < nombreSource; k++) {
+            // if(noeuds[k].type == "source") {
+                for(var i=0; i < table.length; i++) {
+                    if(k == i && !checkIfThereIsALink(table, i)) {
+                        insertEupsilonIntoThisLine(table, i);
+                        return;
+                    }
+                }
+            // }
+        }
+    }
+
+    // Ajout de l'Eupsilon pour pallier le cas dégénéré
+    function insertEupsilonIntoThisLine(table, row) {
+        for(var j=0; j < table[row].length; j++) {
+            if(table[row][j] == 0) {
+                table[row][j] = "E";
+                return;
+            }
+        }
+    }
+
+    // Verifier si cette ligne est en lien avec les autres
+    function checkIfThereIsALink(table, row) {
+        for(var j=0; j < table[row].length; j++) {
+            if(table[row][j] != 0) {
+                for(var i=0; i < table.length; i++) {
+                    if(table[i][j] != 0) {
+                        for(var k=0; k < table.length; k++) {
+                            if(k!=row && table[k][j] != 0) return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     /****************** CODE POUR LE GRAPH EXECUTANT LE STEPPING STONE ********************/
 
@@ -165,9 +228,7 @@ $(function () {
         var nodeDataArray = [], linkDataArray = []; // ce sont les tableaux utilisés par gojs pour rendre la vue
         // On supprime d'abord son contenu puis on le reajoute pour eviter l'erreur durant la creation du diagram
         $("#graph-container").html("");
-        $("#graph-container").append('<div id="myGraph" style="width:100%; height:500px"> \
-        </div>');
-        
+        $("#graph-container").append('<div id="myGraph" style="width:100%; height:500px"></div>');
         var diagram = $$(go.Diagram, "myGraph");
         diagram.nodeTemplate = $$(go.Node, "Auto",
                                     { locationSpot: go.Spot.Center },
@@ -193,18 +254,17 @@ $(function () {
                                 );
 
         nodeDataArray = ObtenirLesTitresDuTableau(array1, array2);
-        
+            
         creerLesLiensEtMettreAJourLesValeursDesNoeuds(baseSolutionTable, nodeDataArray, linkDataArray, array1, array2);
 
         diagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
         noeuds = [...nodeDataArray];    // On copie la valeur de nodeDataArray dans la variable principale noeud 
-
+        
         $("#getGraphBtn").hide();
         $("#calculGainBtn").show();
     });
 
     function creerLesLiensEtMettreAJourLesValeursDesNoeuds (baseSolutionTable, nodeDataArray, linkDataArray, enteteHorizontale, enteteVerticale) {
-        
         // Remplir le tableau linkDataArray pour lier les noeuds
         for(var i=0; i < baseSolutionTable.length; i++) {
             for(var j=0; j < baseSolutionTable[i].length; j++) {
@@ -217,7 +277,6 @@ $(function () {
                 }
             }
         }
-
         let index = getIndexOfMaximumValue(linkDataArray);      // On recherche le lien possédant la valeur maximale
         var origin = linkDataArray[index].from;
         // Initialisation du point de départ
@@ -257,8 +316,6 @@ $(function () {
                 }
             }
         }
-        // console.log(nodeDataArray);
-        // console.log(linkDataArray);
     }
 
     // Receuille la liste des noeuds dans deux tableaux différents
@@ -272,7 +329,7 @@ $(function () {
             x.push(data);
             rang1++;
         });
-        nombreSource = rang1-1;
+        // nombreSource = rang1-1;
         // recevoir la deuxième liste des noeuds 
         $("#initialTable thead tr th.labelle").each(function() {
             var data = { key: "", loc: "", value: null, type: "destination"};
@@ -312,13 +369,14 @@ $(function () {
         var a = [], b = [], c = [], x = [];
 
         getTablesValues(a, b, c);
-
+        nombreSource = a.length;
         // COPIER LA VALEUR DES TABLEAUX AFIN DE GARDER L'ORIGINAL
         var copieC = c.map(function(arr) {
             return arr.slice();
         });
         var copieA = [...a];
         var copieB = [...b];
+        var table = a.concat(b);
 
         x = minitab(copieA, copieB, copieC);
 
@@ -328,7 +386,10 @@ $(function () {
         originalTable = c.map(function(arr) {
             return arr.slice();
         });
-                // console.log("originaltable : "+originalTable);
+        
+        if(estUnCasDegenere(table, baseSolutionTable))
+            addALink(baseSolutionTable);
+            
         solutionDeBase(x, c);
 
         $("#minitabBtn").hide();
@@ -355,7 +416,7 @@ $(function () {
     }
 
     function minitab(a, b, c) {
-        var x = initMatrix(c); // initialiser la matrice 
+        var x = initMatrix(c); // initialiser la matrice
         
         while(!checkTabNull(a) && !checkTabNull(b)) {
             var indexMin = indexOfMin(c); // Cherche l'index de minimum du tableau
