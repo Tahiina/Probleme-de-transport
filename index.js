@@ -19,8 +19,11 @@ $(function () {
                 else
                     baseSolutionTable[ligne][colonne] += gain;
             }
-            else
-                baseSolutionTable[ligne][colonne] -= gain;
+            else {
+                if(baseSolutionTable[ligne][colonne] != "E")
+                    baseSolutionTable[ligne][colonne] -= gain;
+            }
+                
         }
         if(estUnCasDegenere(noeuds, baseSolutionTable))
             addALink(baseSolutionTable, noeuds);
@@ -161,7 +164,13 @@ $(function () {
         var max = liste[0].gain;
         var index = 0;
         for(var i=1; i < liste.length; i++) {
-            if(max > liste[i].gain && liste[i].gain != "-E") {   // on utilise l'operateur > car c'est un nombre negative, alors le maximum de gain sera le plus petit
+            if(max != "-E" && liste[i].gain != "-E") {
+                if(max > liste[i].gain) {   // on utilise l'operateur > car c'est un nombre negative, alors le maximum de gain sera le plus petit
+                    max = liste[i].gain;
+                    index = i;
+                }
+            }
+            if(max == "-E" && liste[i].gain != "-E") { // on change la valeur de max par le premier nombre différent de -E
                 max = liste[i].gain;
                 index = i;
             }
@@ -184,14 +193,12 @@ $(function () {
 
     function addALink(table) {
         for(var k=0; k < nombreSource; k++) {
-            // if(noeuds[k].type == "source") {
-                for(var i=0; i < table.length; i++) {
-                    if(k == i && !checkIfThereIsALink(table, i)) {
-                        insertEupsilonIntoThisLine(table, i);
-                        return;
-                    }
+            for(var i=0; i < table.length; i++) {
+                if(k == i && !checkIfThereIsALink(table, i)) {
+                    insertEupsilonIntoThisLine(table, i);
+                    return;
                 }
-            // }
+            }
         }
     }
 
@@ -390,9 +397,10 @@ $(function () {
         if(estUnCasDegenere(table, baseSolutionTable))
             addALink(baseSolutionTable);
             
-        solutionDeBase(x, c);
+        solutionDeBase(baseSolutionTable, c);
 
         $("#minitabBtn").hide();
+        $("#bhammerBtn").hide();
         $("#getGraphBtn").show();
     });
 
@@ -504,6 +512,157 @@ $(function () {
             }
         }
         return index;
+    }
+
+    /************************************************* ///////////// \\\\\\\\\\\\\\ *********************************************/
+    // BALLAS HAMMER
+
+    $("#bhammerBtn").click(function () {
+        var a = [], b = [], c = [], x = [];
+
+        getTablesValues(a, b, c);
+        nombreSource = a.length;
+        // COPIER LA VALEUR DES TABLEAUX AFIN DE GARDER L'ORIGINAL
+        var copieC = c.map(function(arr) {
+            return arr.slice();
+        });
+        var copieA = [...a];
+        var copieB = [...b];
+        var table = a.concat(b);
+
+        x = bhammer(copieA, copieB, copieC);
+
+        baseSolutionTable = x.map(function(arr) {
+            return arr.slice();
+        });
+        originalTable = c.map(function(arr) {
+            return arr.slice();
+        });
+        
+        if(estUnCasDegenere(table, baseSolutionTable))
+            addALink(baseSolutionTable);
+            
+        solutionDeBase(baseSolutionTable, c);
+
+        $("#minitabBtn").hide();
+        $("#bhammerBtn").hide();
+        $("#getGraphBtn").show();
+    });
+
+    function bhammer(a,b,tableauC){
+        var x = initMatrix(tableauC);
+        // var c =  setMatrix(c);// copier le matrice c
+        var c = tableauC.map(function(arr) {
+            return arr.slice();
+        });
+        var counter = 1;
+    
+        while(counter < (a.length+b.length)){
+    
+            var tc = c[0].map((_, colIndex) => c.map(row => row[colIndex])); // transposé de c
+    
+            var a1 = diffMin(c,a); // différence entre les minimums lignes
+            var b1 = diffMin(tc,b);  // différence entre les minimums colones
+    
+            var max = getMax(a1,b1); // trouver maximum entre le tableau a1 et b1
+            var indexRow = getIndexOfMaximum(a1); // trouver l'index maximum dans le tableau a1
+            var indexCol = getIndexOfMaximum(b1); // trouver l'index maximum dans le tableau b1
+    
+            /* trouver l'index de minimum à la différence maximale */
+            if(max == a1[indexRow]){
+                var rowTab = maka_ny_ligne(c,indexRow);
+                indexCol = rowTab.indexOf(Math.min.apply(null, rowTab.filter(n => n != 0)));
+                
+            } else if(max == b1[indexCol]){
+                var columnTab = maka_ny_colone(c,indexCol);
+                indexRow = columnTab.indexOf(Math.min.apply(null, columnTab.filter(n => n != 0)));
+            }
+    
+            /**/
+            for (var i = 0; i < c.length; i++) {
+                for (var j = 0; j < c[i].length; j++) {
+                    if(i==indexRow && j==indexCol){
+                        if(a[i]<b[j]){
+                            x[i][j] = a[i];
+                            a[i] = 0;
+                            b[j] = b[j] - x[i][j];
+                            remplirLigneZero(c,i,b.length); // fenoina zéro ny ligne zay efa vita 
+                        } else {
+                            x[i][j] = b[j];
+                            a[i] = a[i] - x[i][j]; 
+                            b[j] = 0;
+                            remplirColZero(c,j,a.length); // fenoina zéro ny colone zay efa vita 
+                        }
+    
+                    }
+                }
+            }
+            counter++;
+        }
+        return x;
+    }
+    
+    function diffMin(c,arr){
+        var res = [];
+        for (var i = 0; i < arr.length; i++) {
+            if(arr[i]!=0){
+                var min = Math.min.apply(null, c[i].filter(n => n != 0));
+                var secondMin = 0;
+                if(minimumDuplicate(c[i])) 
+                    secondMin = min; // Si le minimum est dupliqué
+                else 
+                    secondMin = Math.min.apply(null, c[i].filter(n => (n != min)&&(n != 0)));
+                res.push(secondMin-min);
+            } else 
+                res.push(0);
+        }
+        return res;
+    }
+    
+    function minimumDuplicate(arr){
+        var min = Math.min.apply(null, arr.filter(n => n != 0));
+        var counter = 0;
+        for (var i = 0; i < arr.length; i++) {
+            if(arr[i]==min){
+                counter++;
+            }
+        }
+        return (counter!=1);
+    }
+    
+    function getMax(a,b){
+        var max_a = Math.max.apply(null, a);
+        var max_b = Math.max.apply(null, b);
+        return Math.max(max_a,max_b);
+    }
+    
+    function getIndexOfMaximum(arr){
+        var max = Math.max.apply(null, arr);
+        return arr.indexOf(max);
+    }
+    
+    function remplirColZero(c,index, rowLength){
+        for (var i = 0; i < rowLength; i++) {
+            c[i][index] = 0;
+        }
+    }
+    
+    function remplirLigneZero(c,index, colLength){
+        for (var i = 0; i < colLength; i++) {
+            c[index][i] = 0;
+        }
+    }
+    
+    function maka_ny_colone(matrice, col){
+       var column = [];
+       for(var i=0; i<matrice.length; i++){
+          column.push(matrice[i][col]);
+       }
+       return column;
+    }
+    
+    function maka_ny_ligne(matrice, row){
+       return matrice[row];
     }
 
 });
