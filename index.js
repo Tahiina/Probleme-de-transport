@@ -16,6 +16,7 @@ $(function () {
             if(gainMaximum.chemin[i].marque == '+') {
                 if(baseSolutionTable[ligne][colonne] == "E")
                     baseSolutionTable[ligne][colonne] = gain; 
+                    
                 else
                     baseSolutionTable[ligne][colonne] += gain;
             }
@@ -75,7 +76,7 @@ $(function () {
                 }
             }
         }
-        if(listChemin.length > 0) {
+        if(listChemin.length > 0) { 
             indexOfMaximumGain = findIndexOfMaximumOfGain(listChemin);
             gainMaximum = listChemin[indexOfMaximumGain];   // On initialise la variable global gainMaximum
             $("#calculGainBtn").hide();
@@ -84,7 +85,6 @@ $(function () {
         else {
             $("#divInsert").html('<h5 class="text-center font-weight-bold text-uppercase py-2">Félicitation, le transport est optimal</h5>');
         }
-
     });
 
     function marquage(tableau, row, col) {
@@ -461,7 +461,8 @@ $(function () {
         var z = 0;
         for(var i=0; i < c.length; i++) {
             for(var j=0; j < c[i].length; j++) {
-                z += c[i][j]*x[i][j];
+                if(x[i][j] != "E")
+                    z += c[i][j]*x[i][j];
             }
         }
         return z;
